@@ -1,0 +1,10 @@
+bin
+obj
+*.user
+*.suo
+App_Data
+*.results.xml
+/packages
+/lib
+_AzurePackage
+*.bak

@@ -4,10 +4,21 @@ using System.Linq;
 using System.Reflection;
 using System.Web.Mvc;
 using System.Web.WebPages;
+using System.Web.WebPages.Razor;
+using System.Web.Razor;
+using System.Web.Hosting;
+using System.IO;
+using Microsoft.CSharp;
+using System.CodeDom.Compiler;
+using Roslyn.Compilers.CSharp;
+using Roslyn.Compilers;
+using System.Globalization;
+using System.Web;
+using System.Web.Compilation;
 
 namespace RoslynRazorViewEngine {
     public class RoslynRazorViewEngine : VirtualPathProviderViewEngine, IVirtualPathFactory {
-        public RoslynRazorViewEngine(Assembly assembly) {
+        public RoslynRazorViewEngine() {
             base.AreaViewLocationFormats = new[] {
                 "~/Areas/{2}/Views/{1}/{0}.cshtml", 
                 "~/Areas/{2}/Views/{1}/{0}.vbhtml", 
@@ -82,7 +93,51 @@ namespace RoslynRazorViewEngine {
         }
 
         private Type GetTypeFromVirtualPath(string virtualPath) {
-            throw new NotImplementedException();
+            virtualPath = VirtualPathUtility.ToAbsolute(virtualPath);
+
+            WebPageRazorHost host = WebRazorHostFactory.CreateHostFromConfig(virtualPath);
+
+            RazorTemplateEngine engine = new RazorTemplateEngine(host);
+            GeneratorResults results = null;
+            using (var stream = VirtualPathProvider.OpenFile(virtualPath)) {
+                using (TextReader reader = new StreamReader(stream)) {
+                    results = engine.GenerateCode(reader, className: null, rootNamespace: null, sourceFileName: host.PhysicalPath);
+                }
+            }
+            //if (!results.Success) {
+            //    throw CreateExceptionFromParserError(results.ParserErrors.Last(), VirtualPath);
+            //}
+            //_generatedCode = results.GeneratedCode;
+
+            var codeDomProvider = new CSharpCodeProvider();
+            var srcFileWriter = new StringWriter();
+            codeDomProvider.GenerateCodeFromCompileUnit(results.GeneratedCode, srcFileWriter, new CodeGeneratorOptions());
+
+            string code = srcFileWriter.ToString();
+            var syntaxTree = SyntaxTree.ParseCompilationUnit(code);
+
+            var references = new List<AssemblyFileReference>();
+            foreach (Assembly referencedAssembly in BuildManager.GetReferencedAssemblies()) {
+                references.Add(new AssemblyFileReference(referencedAssembly.Location));
+            }
+
+            var compilationOptions = new CompilationOptions(assemblyKind: AssemblyKind.DynamicallyLinkedLibrary);
+
+            var compilation = Compilation.Create("qqq", compilationOptions, new[] { syntaxTree }, references.ToArray());
+
+            var memStream = new MemoryStream();
+            var emitResult = compilation.Emit(memStream);
+
+            if (!emitResult.Success) {
+                foreach (Diagnostic diagnostic in emitResult.Diagnostics) {
+                    throw new Exception(diagnostic.Info.ToString());
+                }
+                return null;
+            }
+
+            var assembly = Assembly.Load(memStream.GetBuffer());
+
+            return assembly.GetType(String.Format(CultureInfo.CurrentCulture, "{0}.{1}", host.DefaultNamespace, host.DefaultClassName));
         }
     }
 }

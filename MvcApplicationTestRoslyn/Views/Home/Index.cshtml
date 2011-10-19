@@ -2,6 +2,8 @@
 
 @{
     Layout = null;
+    
+    Func<string, string> upper = ((s) => s.ToUpper());
 }
 
 <!DOCTYPE html>
@@ -12,7 +14,7 @@
 </head>
 <body>
     <div>
-        Hello @(1+1)!
+        Hello @upper("Hello")!
     </div>
 </body>
 </html>

@@ -123,7 +123,7 @@ namespace RoslynRazorViewEngine {
 
             var compilationOptions = new CompilationOptions(assemblyKind: AssemblyKind.DynamicallyLinkedLibrary);
 
-            var compilation = Compilation.Create("qqq", compilationOptions, new[] { syntaxTree }, references.ToArray());
+            var compilation = Compilation.Create("qqq", compilationOptions, new[] { syntaxTree }, references);
 
             var memStream = new MemoryStream();
             var emitResult = compilation.Emit(memStream);

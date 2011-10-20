@@ -93,20 +93,22 @@ namespace RoslynRazorViewEngine {
         }
 
         private Type GetTypeFromVirtualPathNoCache(string virtualPath) {
+            // Use the Razor engine to generate source code from the view
             WebPageRazorHost host = WebRazorHostFactory.CreateHostFromConfig(virtualPath);
             string code = GenerateCodeFromRazorTemplate(host, virtualPath);
 
-            var assembly = CompileCodeIntoAssembly(code, virtualPath);
+            // Use Roslyn to compile the code into an assembly
+            Assembly assembly = CompileCodeIntoAssembly(code, virtualPath);
 
             return assembly.GetType(String.Format(CultureInfo.CurrentCulture, "{0}.{1}", host.DefaultNamespace, host.DefaultClassName));
         }
 
         private string GenerateCodeFromRazorTemplate(WebPageRazorHost host, string virtualPath) {
-            host = WebRazorHostFactory.CreateHostFromConfig(virtualPath);
-            VirtualPathProvider vpp = HostingEnvironment.VirtualPathProvider;
+
+            // Create Razor engine and use it to generate a CodeCompileUnit
             var engine = new RazorTemplateEngine(host);
             GeneratorResults results = null;
-            VirtualFile file = vpp.GetFile(virtualPath);
+            VirtualFile file = HostingEnvironment.VirtualPathProvider.GetFile(virtualPath);
             using (var stream = file.Open()) {
                 using (TextReader reader = new StreamReader(stream)) {
                     results = engine.GenerateCode(reader, className: null, rootNamespace: null, sourceFileName: host.PhysicalPath);
@@ -117,6 +119,7 @@ namespace RoslynRazorViewEngine {
                 throw CreateExceptionFromParserError(results.ParserErrors.Last(), virtualPath);
             }
 
+            // Use CodeDom to generate source code from the CodeCompileUnit
             var codeDomProvider = new CSharpCodeProvider();
             var srcFileWriter = new StringWriter();
             codeDomProvider.GenerateCodeFromCompileUnit(results.GeneratedCode, srcFileWriter, new CodeGeneratorOptions());

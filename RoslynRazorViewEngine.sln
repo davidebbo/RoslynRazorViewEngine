@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynRazorViewEngine", "Ro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvcApplicationTestRoslyn", "MvcApplicationTestRoslyn\MvcApplicationTestRoslyn.csproj", "{D7F95D11-DB85-4AAB-AD43-7BD776E870A9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvcApplicationTestMono", "MvcApplicationTestMono\MvcApplicationTestMono.csproj", "{BFC84D4F-B1B3-4AF8-A107-19CB91A804EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{D7F95D11-DB85-4AAB-AD43-7BD776E870A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7F95D11-DB85-4AAB-AD43-7BD776E870A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7F95D11-DB85-4AAB-AD43-7BD776E870A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFC84D4F-B1B3-4AF8-A107-19CB91A804EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFC84D4F-B1B3-4AF8-A107-19CB91A804EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFC84D4F-B1B3-4AF8-A107-19CB91A804EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFC84D4F-B1B3-4AF8-A107-19CB91A804EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

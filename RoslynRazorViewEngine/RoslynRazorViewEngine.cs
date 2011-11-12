@@ -17,6 +17,7 @@ using System.Web.WebPages.Razor;
 using Microsoft.CSharp;
 using Roslyn.Compilers;
 using Roslyn.Compilers.CSharp;
+using Mono.CSharp;
 
 namespace RoslynRazorViewEngine {
     public class RoslynRazorViewEngine : VirtualPathProviderViewEngine, IVirtualPathFactory {
@@ -98,9 +99,10 @@ namespace RoslynRazorViewEngine {
             string code = GenerateCodeFromRazorTemplate(host, virtualPath);
 
             // Use Roslyn to compile the code into an assembly
-            Assembly assembly = CompileCodeIntoAssembly(code, virtualPath);
+            Evaluator evaluator = CompileCodeIntoAssembly(code, virtualPath);
 
-            return assembly.GetType(String.Format(CultureInfo.CurrentCulture, "{0}.{1}", host.DefaultNamespace, host.DefaultClassName));
+            string typeofExpr = (String.Format(CultureInfo.CurrentCulture, "typeof({0}.{1});", host.DefaultNamespace, host.DefaultClassName));
+            return (Type)evaluator.Evaluate(typeofExpr);
         }
 
         private string GenerateCodeFromRazorTemplate(WebPageRazorHost host, string virtualPath) {
@@ -127,34 +129,26 @@ namespace RoslynRazorViewEngine {
             return srcFileWriter.ToString();
         }
 
-        private Assembly CompileCodeIntoAssembly(string code, string virtualPath) {
-            // Parse the source file using Roslyn
-            var syntaxTree = SyntaxTree.ParseCompilationUnit(code);
+        private Evaluator CompileCodeIntoAssembly(string code, string virtualPath) {
+            var writer = new StringWriter();
+            var evaluator = new Evaluator(
+                new CompilerSettings(),
+                new Report(new ConsoleReportPrinter(writer)));
 
             // Add all the references we need for the compilation
-            var references = new List<AssemblyFileReference>();
             foreach (Assembly referencedAssembly in BuildManager.GetReferencedAssemblies()) {
-                references.Add(new AssemblyFileReference(referencedAssembly.Location));
+                if (referencedAssembly == typeof(string).Assembly) continue;
+                if (referencedAssembly == typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute).Assembly) continue;
+                if (referencedAssembly == typeof(System.Runtime.CompilerServices.ExtensionAttribute).Assembly) continue;
+                if (referencedAssembly == typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo).Assembly) continue;
+                
+                evaluator.ReferenceAssembly(referencedAssembly);
             }
 
-            var compilationOptions = new CompilationOptions(assemblyKind: AssemblyKind.DynamicallyLinkedLibrary);
+            evaluator.Compile(code);
+            string s = writer.ToString();
 
-            // Note: using a fixed assembly name, which doesn't matter as long as we don't expect cross references of generated assemblies
-            var compilation = Compilation.Create("SomeAssemblyName", compilationOptions, new[] { syntaxTree }, references);
-
-            // Generate the assembly into a memory stream
-            var memStream = new MemoryStream();
-            EmitResult emitResult = compilation.Emit(memStream);
-
-            if (!emitResult.Success) {
-                Diagnostic diagnostic = emitResult.Diagnostics.First();
-                string message = diagnostic.Info.ToString();
-                LinePosition linePosition = diagnostic.Location.GetLineSpan(usePreprocessorDirectives: true).StartLinePosition;
-
-                throw new HttpParseException(message, null, virtualPath, null, linePosition.Line + 1);
-            }
-
-            return Assembly.Load(memStream.GetBuffer());
+            return evaluator;
         }
 
         private HttpParseException CreateExceptionFromParserError(RazorError error, string virtualPath) {

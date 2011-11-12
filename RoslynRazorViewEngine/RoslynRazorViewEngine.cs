@@ -18,9 +18,12 @@ using Microsoft.CSharp;
 using Roslyn.Compilers;
 using Roslyn.Compilers.CSharp;
 
-namespace RoslynRazorViewEngine {
-    public class RoslynRazorViewEngine : VirtualPathProviderViewEngine, IVirtualPathFactory {
-        public RoslynRazorViewEngine() {
+namespace RoslynRazorViewEngine
+{
+    public class RoslynRazorViewEngine : VirtualPathProviderViewEngine, IVirtualPathFactory
+    {
+        public RoslynRazorViewEngine()
+        {
             base.AreaViewLocationFormats = new[] {
                 "~/Areas/{2}/Views/{1}/{0}.cshtml", 
                 "~/Areas/{2}/Views/Shared/{0}.cshtml"
@@ -52,26 +55,31 @@ namespace RoslynRazorViewEngine {
             };
         }
 
-        protected override IView CreatePartialView(ControllerContext controllerContext, string partialPath) {
+        protected override IView CreatePartialView(ControllerContext controllerContext, string partialPath)
+        {
             Type type = GetTypeFromVirtualPath(partialPath);
             return new RoslynRazorView(partialPath, type, false, base.FileExtensions);
         }
 
-        protected override IView CreateView(ControllerContext controllerContext, string viewPath, string masterPath) {
+        protected override IView CreateView(ControllerContext controllerContext, string viewPath, string masterPath)
+        {
             Type type = GetTypeFromVirtualPath(viewPath);
             return new RoslynRazorView(viewPath, type, true, base.FileExtensions);
         }
 
-        public object CreateInstance(string virtualPath) {
+        public object CreateInstance(string virtualPath)
+        {
             Type type = GetTypeFromVirtualPath(virtualPath);
             return Activator.CreateInstance(type);
         }
 
-        public bool Exists(string virtualPath) {
+        public bool Exists(string virtualPath)
+        {
             return FileExists(controllerContext: null, virtualPath: virtualPath);
         }
 
-        private Type GetTypeFromVirtualPath(string virtualPath) {
+        private Type GetTypeFromVirtualPath(string virtualPath)
+        {
 
             virtualPath = VirtualPathUtility.ToAbsolute(virtualPath);
 
@@ -79,7 +87,8 @@ namespace RoslynRazorViewEngine {
 
             Type type = (Type)HttpRuntime.Cache[cacheKey];
 
-            if (type == null) {
+            if (type == null)
+            {
                 DateTime utcStart = DateTime.UtcNow;
 
                 type = GetTypeFromVirtualPathNoCache(virtualPath);
@@ -92,7 +101,8 @@ namespace RoslynRazorViewEngine {
             return type;
         }
 
-        private Type GetTypeFromVirtualPathNoCache(string virtualPath) {
+        private Type GetTypeFromVirtualPathNoCache(string virtualPath)
+        {
             // Use the Razor engine to generate source code from the view
             WebPageRazorHost host = WebRazorHostFactory.CreateHostFromConfig(virtualPath);
             string code = GenerateCodeFromRazorTemplate(host, virtualPath);
@@ -103,19 +113,23 @@ namespace RoslynRazorViewEngine {
             return assembly.GetType(String.Format(CultureInfo.CurrentCulture, "{0}.{1}", host.DefaultNamespace, host.DefaultClassName));
         }
 
-        private string GenerateCodeFromRazorTemplate(WebPageRazorHost host, string virtualPath) {
+        private string GenerateCodeFromRazorTemplate(WebPageRazorHost host, string virtualPath)
+        {
 
             // Create Razor engine and use it to generate a CodeCompileUnit
             var engine = new RazorTemplateEngine(host);
             GeneratorResults results = null;
             VirtualFile file = HostingEnvironment.VirtualPathProvider.GetFile(virtualPath);
-            using (var stream = file.Open()) {
-                using (TextReader reader = new StreamReader(stream)) {
+            using (var stream = file.Open())
+            {
+                using (TextReader reader = new StreamReader(stream))
+                {
                     results = engine.GenerateCode(reader, className: null, rootNamespace: null, sourceFileName: host.PhysicalPath);
                 }
             }
 
-            if (!results.Success) {
+            if (!results.Success)
+            {
                 throw CreateExceptionFromParserError(results.ParserErrors.Last(), virtualPath);
             }
 
@@ -127,13 +141,15 @@ namespace RoslynRazorViewEngine {
             return srcFileWriter.ToString();
         }
 
-        private Assembly CompileCodeIntoAssembly(string code, string virtualPath) {
+        private Assembly CompileCodeIntoAssembly(string code, string virtualPath)
+        {
             // Parse the source file using Roslyn
             var syntaxTree = SyntaxTree.ParseCompilationUnit(code);
 
             // Add all the references we need for the compilation
             var references = new List<AssemblyFileReference>();
-            foreach (Assembly referencedAssembly in BuildManager.GetReferencedAssemblies()) {
+            foreach (Assembly referencedAssembly in BuildManager.GetReferencedAssemblies())
+            {
                 references.Add(new AssemblyFileReference(referencedAssembly.Location));
             }
 
@@ -146,7 +162,8 @@ namespace RoslynRazorViewEngine {
             var memStream = new MemoryStream();
             EmitResult emitResult = compilation.Emit(memStream);
 
-            if (!emitResult.Success) {
+            if (!emitResult.Success)
+            {
                 Diagnostic diagnostic = emitResult.Diagnostics.First();
                 string message = diagnostic.Info.ToString();
                 LinePosition linePosition = diagnostic.Location.GetLineSpan(usePreprocessorDirectives: true).StartLinePosition;
@@ -157,7 +174,8 @@ namespace RoslynRazorViewEngine {
             return Assembly.Load(memStream.GetBuffer());
         }
 
-        private HttpParseException CreateExceptionFromParserError(RazorError error, string virtualPath) {
+        private HttpParseException CreateExceptionFromParserError(RazorError error, string virtualPath)
+        {
             return new HttpParseException(error.Message + Environment.NewLine, null, virtualPath, null, error.Location.LineIndex + 1);
         }
     }

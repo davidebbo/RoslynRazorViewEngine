@@ -1,0 +1,21 @@
+﻿@{
+    GC.Collect();
+    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+}
+
+<html>
+<head>
+    <title>Index</title>
+</head>
+<body>
+    <div>
+        <h2>Loaded assemblies: @assemblies.Length</h2>
+        <ul>
+        @foreach (var a in assemblies)
+        {
+            <li>@a.FullName</li>
+        }
+        </ul>
+    </div>
+</body>
+</html>

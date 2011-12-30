@@ -85,7 +85,8 @@ namespace RoslynRazorViewEngine
 
             string cacheKey = "RoslynRazor_" + virtualPath;
 
-            Type type = (Type)HttpRuntime.Cache[cacheKey];
+            //Type type = (Type)HttpRuntime.Cache[cacheKey];
+            Type type = null;
 
             if (type == null)
             {

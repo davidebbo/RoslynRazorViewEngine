@@ -14,9 +14,11 @@ using System.Web.Razor;
 using System.Web.Razor.Parser.SyntaxTree;
 using System.Web.WebPages;
 using System.Web.WebPages.Razor;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Emit;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.CSharp;
-using Roslyn.Compilers;
-using Roslyn.Compilers.CSharp;
 
 namespace RoslynRazorViewEngine
 {

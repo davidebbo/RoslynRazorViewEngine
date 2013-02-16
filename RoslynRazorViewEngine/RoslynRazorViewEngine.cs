@@ -144,16 +144,16 @@ namespace RoslynRazorViewEngine
         private Assembly CompileCodeIntoAssembly(string code, string virtualPath)
         {
             // Parse the source file using Roslyn
-            var syntaxTree = SyntaxTree.ParseCompilationUnit(code);
+            SyntaxTree syntaxTree = SyntaxTree.ParseText(code);
 
             // Add all the references we need for the compilation
-            var references = new List<AssemblyFileReference>();
+            var references = new List<MetadataReference>();
             foreach (Assembly referencedAssembly in BuildManager.GetReferencedAssemblies())
             {
-                references.Add(new AssemblyFileReference(referencedAssembly.Location));
+                references.Add(new MetadataFileReference(referencedAssembly.Location));
             }
 
-            var compilationOptions = new CompilationOptions(assemblyKind: AssemblyKind.DynamicallyLinkedLibrary);
+            var compilationOptions = new CompilationOptions(outputKind: OutputKind.DynamicallyLinkedLibrary);
 
             // Note: using a fixed assembly name, which doesn't matter as long as we don't expect cross references of generated assemblies
             var compilation = Compilation.Create("SomeAssemblyName", compilationOptions, new[] { syntaxTree }, references);

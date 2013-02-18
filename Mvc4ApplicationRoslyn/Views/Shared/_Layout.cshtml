@@ -31,6 +31,7 @@
         <div id="body">
             @RenderSection("featured", required: false)
             <section class="content-wrapper main-content clear-fix">
+                <h2>Layout assembly: @GetType().Assembly</h2>
                 @RenderBody()
             </section>
         </div>

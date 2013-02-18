@@ -16,11 +16,6 @@ namespace Mvc4ApplicationRoslyn
     {
         protected void Application_Start()
         {
-            var engine = new RoslynRazorViewEngine.RoslynRazorViewEngine();
-
-            ViewEngines.Engines.Clear();
-            ViewEngines.Engines.Add(engine);
-
             AreaRegistration.RegisterAllAreas();
 
             WebApiConfig.Register(GlobalConfiguration.Configuration);
